@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.10">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.suryagaddipati.jenkins.SlaveUtilizationProperty plugin="slave-utilization-plugin@1.8">
+      <needsExclusiveAccessToNode>false</needsExclusiveAccessToNode>
+      <singleInstancePerSlave>false</singleInstancePerSlave>
+      <slaveUtilizationPercentage>0</slaveUtilizationPercentage>
+    </com.suryagaddipati.jenkins.SlaveUtilizationProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.25">
+      <autoRebuild>false</autoRebuild>
+      <rebuildDisabled>false</rebuildDisabled>
+    </com.sonyericsson.rebuild.RebuildSettings>
+    <com.synopsys.arc.jenkinsci.plugins.jobrestrictions.jobs.JobRestrictionProperty plugin="job-restrictions@0.6"/>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.29">
+    <script>stage &apos;CI&apos;
+node(&apos;windows&apos;) {
+
+  git branch: &apos;jenkins2-course&apos;, url: &apos;https://github.com/rammaram06/solitaire-systemjs-course.git&apos;
+    // pull dependencies from npm
+    // on windows use: bat &apos;npm install&apos;
+    //sh &apos;npm install&apos;
+
+    bat &apos;npm install&apos;
+
+    // stash code &amp; dependencies to expedite subsequent testing
+    // and ensure same code &amp; dependencies are used throughout the pipeline
+    // stash is a temporary archive
+    stash name: &apos;everything&apos;,
+          excludes: &apos;test-results/**&apos;,
+          includes: &apos;**&apos;
+
+    // test with PhantomJS for &quot;fast&quot; &quot;generic&quot; results
+    // on windows use: bat &apos;npm run test-single-run -- --browsers PhantomJS&apos;
+    //sh &apos;npm run test-single-run -- --browsers PhantomJS&apos;
+    bat &apos;npm run test-single-run -- --browsers PhantomJS&apos;
+
+    // archive karma test results (karma is configured to export junit xml files)
+   junit &apos;test-results/**/test-results.xml&apos;
+
+}
+
+    stage &apos;Browser Testing&apos;
+    parallel chrome: {
+        runTests(&quot;Chrome&quot;)
+    }, firefox: {
+        runTests(&quot;Firefox&quot;)
+    }
+
+
+def runTests(browser) {
+    node(&apos;windows&apos;) {
+        bat &apos;del *.* /F /Q&apos;
+        unstash &apos;everything&apos;
+        bat &quot;npm run test-single-run -- --browsers ${browser}&quot;
+        junit &apos;test-results/**/test-results.xml&apos;
+
+    }
+}
+
+//input &apos;Deploy to staging?&apos;
+
+//stage name: &apos;Deploy&apos;, concurrency: 1
+ // node(&apos;win2012r2&apos;) {
+   //   bat &quot;echo &apos;&lt;h1&gt;${env.BUILD_DISPLAY_NAME}&lt;h1&gt;&apos; &gt;&gt; app/index.html&quot;
+     // bat &apos;docker-compose up -d --build&apos;
+  //}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>[

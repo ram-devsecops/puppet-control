@@ -1,0 +1,10 @@
+---
+:backends:
+  - yaml
+:hierarchy:
+  - clientcert/%{clientcert}
+  - puppet_role/%{hostname}
+  - global
+
+:yaml:
+  :datadir: '/etc/puppetlabs/code/environments/%{::environment}/hieradata'

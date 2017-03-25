@@ -1,0 +1,49 @@
+---
+ssh:
+  insert_key: false
+
+vms:
+- name: master
+  hostname: "master.devops"
+  box: puppetlabs/centos-7.2-64-nocm
+  roles: ["setup_control_repo", "get_modules", "pe-puppet-master", "base_4096mb_ram", "el-fix-path", "pe-forward-console", "el-stop-firewall"]
+
+- name: win2008r2
+  hostname: "win2008r2"
+  box: "opentable/win-2008r2-standard-amd64-nocm"
+  roles: ["invoke_puppet", "pe-puppet-windows", "base_1024mb_ram", "windows"]
+
+- name: centos7
+  hostname: "centos7.devops"
+  box: "puppetlabs/centos-7.2-64-nocm"
+  roles: ["invoke_puppet", "pe-puppet-centos", "base_512mb_ram", "el-stop-firewall"]
+
+- name: jenkins
+  hostname: "jenkins.devops"
+  box: "puppetlabs/centos-7.2-64-nocm"
+  roles: ["invoke_puppet", "pe-puppet-centos", "base_2048mb_ram", "el-stop-firewall", "jenkins-master"]
+
+- name: octopus
+  hostname: "octopusserver"
+  box: "octopusdeploy/dsc-test-server"
+  roles: ["invoke_puppet", "pe-puppet-windows", "base_1024mb_ram", "windows"]
+
+- name: win2012r2
+  hostname: "win2012r2"
+  box: "win2012r2-enterprise-1.7.1-virtualbox"
+  roles: ["invoke_puppet", "pe-puppet-windows", "base_1024mb_ram", "windows"]
+
+- name: slave
+  hostname: "centos7slave.devops"
+  box: "puppetlabs/centos-7.2-64-nocm"
+  roles: ["invoke_puppet", "pe-puppet-centos", "base_512mb_ram", "el-stop-firewall"]
+
+- name: slavewin
+  hostname: "winslave"
+  box: "mwrock/Windows2012R2"
+  roles: ["invoke_puppet", "pe-puppet-windows", "base_1024mb_ram", "windows"]
+
+- name: win2016
+  hostname: "win2016"
+  box: "StefanScherer/windows_2016_docker"
+  roles: ["invoke_puppet", "pe-puppet-windows", "base_2048mb_ram", "win_2016"]

@@ -1,0 +1,164 @@
+---
+roles:
+
+  base_4096mb_ram:
+    providers:
+      - type: virtualbox
+        customize:
+          - [modifyvm, !ruby/sym id, '--memory', 4096]
+
+  base_2048mb_ram:
+    providers:
+      - type: virtualbox
+        customize:
+          - [modifyvm, !ruby/sym id, '--memory', 2048]
+          - [modifyvm, !ruby/sym id, '--cpus', 2]
+          - [modifyvm, !ruby/sym id, '--vram', 64]
+
+  base_1024mb_ram:
+    providers:
+      - type: virtualbox
+        customize:
+          - [modifyvm, !ruby/sym id, '--memory', 1024]
+
+  base_512mb_ram:
+    providers:
+      - type: virtualbox
+        customize:
+          - [modifyvm, !ruby/sym id, '--memory', 512]
+
+  pe-puppet-master:
+    private_networks:
+      - {auto_network: true}
+    forwarded_ports:
+      - {guest: 8170, host: 8170, auto_correct: true}
+      - {guest: 443, host: 443, auto_correct: true}
+    provisioners:
+      - {type: hosts,  add_localhost_hostnames: false, sync_hosts: true}
+      - type: shell
+        inline: "echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+      - type: pe_bootstrap
+        role: :master
+
+  pe-puppet-windows:
+    private_networks:
+      - {auto_network: true}
+    provisioners:
+      - {type: hosts,  add_localhost_hostnames: false, sync_hosts: true}
+      - {type: shell, path: './config/puppet.ps1'}
+
+  pe-puppet-centos:
+    private_networks:
+      - {auto_network: true}
+    provisioners:
+      - {type: hosts,  add_localhost_hostnames: false, sync_hosts: true}
+      - {type: pe_agent, master: master}
+
+  windows:
+    guest: windows
+    communicator: winrm
+    forwarded_ports:
+      - {guest: 8089, host: 8089, auto_correct: true}
+      - {guest: 3389, host: 3389, auto_correct: true, id: rdp}
+    providers:
+      - type: virtualbox
+        gui: true
+        customize:
+          - [modifyvm, !ruby/sym id, '--clipboard', 'disabled']
+          - [modifyvm, !ruby/sym id, '--audio', 'none']
+          - [modifyvm, !ruby/sym id, '--usb', 'off']
+    provisioners:
+      - {type: shell, path: './config/enable-rdp.bat'}
+
+  pe-forward-console:
+    forwarded_ports:
+      - {guest: 443, host: 4443, auto_correct: true}
+
+  pe-memory-tuning:
+    provisioners:
+      - type: file
+        source: './config/pe-memory-tuning.yaml'
+        destination: '/tmp/common.yaml'
+      - type: shell
+        inline: |-
+          mkdir -p /etc/puppetlabs/code/environments/production/hieradata
+          if [ -e /tmp/common.yaml ]; then
+             install -m 0644 /tmp/common.yaml /etc/puppetlabs/code/environments/production/hieradata
+          fi
+
+  el-fix-path:
+    provisioners:
+      - type: shell
+        inline: |
+          echo "export PATH=$PATH:/usr/local/bin" > /etc/profile.d/path_fix.sh
+
+  el-stop-firewall:
+    provisioners:
+      - type: shell
+        inline: |
+          RH_VERS=$(rpm -q --qf "%{VERSION}" $(rpm -q --whatprovides redhat-release)|grep -o '^[0-9]')
+          if [ "$RH_VERS" -gt "6" ]; then
+            systemctl stop firewalld.service
+            systemctl disable firewalld.service
+          else
+            service iptables stop
+            chkconfig iptables off
+          fi
+          exit 0
+
+  jenkins-master:
+    forwarded_ports:
+      - {guest: 8080, host: 8080, auto_correct: true}
+      - {guest: 80, host: 80, auto_correct: true}
+
+
+  get_modules:
+    provisioners:
+      - type: shell
+        inline: "r10k puppetfile install --puppetfile /vagrant/Puppetfile --moduledir /etc/puppetlabs/code/modules -v"
+      - type: shell
+        inline: "/bin/chown -R pe-puppet:pe-puppet /etc/puppetlabs/code"
+
+  setup_control_repo:
+    provisioners:
+      - type: shell
+        inline: "mkdir -p /etc/puppetlabs/code/environments/production"
+      - type: shell
+        inline: "yes | cp /vagrant/environment.conf /etc/puppetlabs/code/environments/production/environment.conf"
+      - type: shell
+        inline: "yes | cp -r /vagrant/manifests /etc/puppetlabs/code/environments/production/"
+      - type: shell
+        inline: "yes | cp -r /vagrant/site /etc/puppetlabs/code/environments/production/"
+      - type: shell
+        inline: "yes | cp -r /vagrant/scripts /etc/puppetlabs/code/environments/production/"
+      - type: shell
+        inline: "yes | cp -r /vagrant/hieradata /etc/puppetlabs/code/environments/production/"
+      - type: shell
+        inline: "yes | cp /vagrant/hiera.yaml /etc/puppetlabs/puppet/"
+      - type: shell
+        inline: "/bin/chown pe-puppet:pe-puppet /etc/puppetlabs/puppet/hiera.yaml"
+      - type: shell
+        inline: "/bin/chown -R pe-puppet:pe-puppet /etc/puppetlabs/code"
+      - type: shell
+        inline: 'service pe-puppetserver restart'
+      - type: shell
+        inline: 'puppet agent -t || true'
+
+  invoke_puppet:
+    provisioners:
+      - type: shell
+        inline: 'puppet agent -t'
+
+  win_2016:
+    guest: windows
+    communicator: winrm
+    forwarded_ports:
+      - {guest: 8089, host: 8089, auto_correct: true}
+      - {guest: 3389, host: 3389, auto_correct: true, id: rdp}
+    providers:
+      - type: virtualbox
+        gui: true
+        customize:
+          - [modifyvm, !ruby/sym id, '--clipboard', 'bidirectional']
+          - [modifyvm, !ruby/sym id, '--accelerate3d', 'on']
+          - [modifyvm, !ruby/sym id, '--accelerate2dvideo', 'on']
