@@ -85,7 +85,7 @@ class profile::jenkins {
     email    => 'admin@example.com',
     password => 'admin',
   }
-  
+
   jenkins::job { 'solitaire_systemjs':
     config  => epp('profile/solitaire_systemjs.xml'),
     require => Package['jenkins'],
@@ -100,10 +100,6 @@ class profile::jenkins {
     listen_port    => 80,
     listen_options => 'default_server',
     proxy          => 'http://localhost:8080',
-  }
-
-  class { 'maven':
-    version => "3.2.5",
   }
 
   # Set Jenkins' default shell to bash
