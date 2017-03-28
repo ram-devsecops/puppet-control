@@ -10,25 +10,6 @@ class profile::puppetmaster {
     'retries',
   ]
 
-  # Create basic firewall rules
-  firewall { '100 allow https access':
-    dport  => 443,
-    proto  => tcp,
-    action => accept,
-  }
-
-  firewall { '101 allow mco access':
-    dport  => 61613,
-    proto  => tcp,
-    action => accept,
-  }
-
-  firewall { '102 allow puppet access':
-    dport  => 8140,
-    proto  => tcp,
-    action => accept,
-  }
-
   $server_gems.each |$gem| {
     package { "${gem}_server":
       ensure   => present,
@@ -46,10 +27,10 @@ class profile::puppetmaster {
   }
 
   # Make sure that a user exists for me
-  rbac_user { 'dylan':
+  rbac_user { 'Bond':
     ensure       => 'present',
-    display_name => 'Dylan Ratcliffe',
-    email        => 'dylan.ratcliffe@puppet.com',
+    display_name => 'James Bond',
+    email        => 'james.bond@puppet.com',
     password     => 'puppetlabs',
     roles        => [ 'Administrators' ],
   }
@@ -118,4 +99,13 @@ class profile::puppetmaster {
     after   => 'default colorschemes',
     require => Package['multitail'],
   }
+
+  /*node_group { 'PE Master':
+    ensure               => 'present',
+    classes              => {'pe_repo' => {}, 'pe_repo::platform::el_7_x86_64' => {}, 'pe_repo::platform::windows_x86_64' => {}, 'puppet_enterprise::profile::master' => {'enable_future_parser' => false}, 'puppet_enterprise::profile::master::mcollective' => {}, 'puppet_enterprise::profile::mcollective::peadmin' => {}},
+    environment          => 'production',
+    override_environment => false,
+    parent               => 'PE Infrastructure',
+    rule                 => ['or', ['=', 'name', 'master.devops']],
+  }*/
 }

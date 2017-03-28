@@ -38,11 +38,8 @@ Installs Puppet Enterprise master server
 * ~/.vagrant.d/gems/2.2.5/gems/vagrant-hostmanager-1.8.5/lib/vagrant-hostmanager/hosts_file/updater.rb file
 https://github.com/devopsgroup-io/vagrant-hostmanager/pull/229/files
 
-* Add `pe_repo::platform::windows_x86_64` PE Master Classification in console and run puppet on master.
 * vagrant up slavewin (Brings up a win2012r2 vm)
 
-### TODO
-* Automate adding `pe_repo::platform::windows_x86_64` class to PE Master
 ###Note:
 
 

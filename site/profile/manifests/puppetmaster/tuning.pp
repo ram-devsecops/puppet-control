@@ -59,7 +59,11 @@ class profile::puppetmaster::tuning {
         'Xmx' => "${puppetserver_memory}m",
         'Xms' => "${puppetserver_memory}m"
       }
-    }
+    },
+    'pe_repo' => {}, 'pe_repo::platform::el_7_x86_64' => {},
+    'pe_repo::platform::windows_x86_64' => {},
+    'puppet_enterprise::profile::master::mcollective' => {},
+    'puppet_enterprise::profile::mcollective::peadmin' => {}
   }
 
   $pe_console_group_additions = {
